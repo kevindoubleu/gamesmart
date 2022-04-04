@@ -1,4 +1,4 @@
-package config
+package constants
 
 const (
 	E      = "Error "
@@ -11,5 +11,6 @@ const (
 	E_DBI_INIT    = E + "initializing database" + SUFFIX
 	E_DBI_CONNECT = E + "connecting to database" + SUFFIX
 
-	E_DBO_READ = E + "reading from database" + SUFFIX
+	E_DBO_READ   = E + "reading from database" + SUFFIX
+	E_DBO_INSERT = E + "inserting into database" + SUFFIX
 )

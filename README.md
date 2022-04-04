@@ -3,5 +3,19 @@ Simple, gamified, casual e-learning
 
 ## backlog
 
-- [ ] try implementing the standard package layout
-- [ ] add gorm
+- [ ] auth
+  - [x] register
+  - [ ] login
+  - [ ] logout
+  - [ ] profile
+
+- [ ] question
+  - [ ] show
+  - [ ] answer
+    - [ ] correct
+    - [ ] wrong
+  - [ ] hint
+  - [ ] explanation
+
+- [ ] leaderboard
+- [ ] shop

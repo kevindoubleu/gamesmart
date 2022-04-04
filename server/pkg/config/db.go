@@ -4,13 +4,14 @@ import (
 	"context"
 	"log"
 	"os"
-	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+
+	"github.com/kevindoubleu/gamesmart/pkg/config/constants"
 )
 
-func ConnectDb() (*mongo.Database, error) {
+func ConnectDb() *mongo.Database {
 	client, err := mongo.NewClient(
 		options.Client().ApplyURI(os.Getenv("MONGO_URI")),
 		options.Client().SetAuth(options.Credential{
@@ -19,17 +20,15 @@ func ConnectDb() (*mongo.Database, error) {
 		}),
 	)
 	if err != nil {
-		log.Fatal(E_DBI_INIT, err)
-		return nil, err
+		log.Fatal(constants.E_DBI_INIT, err)
 	}
 
-	dbInit, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
+	dbInit, cancel := context.WithTimeout(context.Background(), constants.DBO_TIMEOUT)
 	defer cancel()
 	err = client.Connect(dbInit)
 	if err != nil {
-		log.Fatal(E_DBI_CONNECT, err)
-		return nil, err
+		log.Fatal(constants.E_DBI_CONNECT, err)
 	}
 
-	return client.Database("gamesmart"), nil
+	return client.Database("gamesmart")
 }
