@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/kevindoubleu/gamesmart/model"
+	"github.com/kevindoubleu/gamesmart/pkg/model"
 )
 
 // imagine this was from a database query
