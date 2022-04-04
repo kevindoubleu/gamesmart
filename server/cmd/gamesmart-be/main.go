@@ -22,7 +22,7 @@ func main() {
 		panic("db init error:" + err.Error())
 	}
 
-
+	fmt.Println("db initializec")
 
 	dbOperation, cancel := context.WithTimeout(context.Background(), 1 * time.Second)
 	defer cancel()
@@ -45,7 +45,7 @@ func main() {
 
 	fmt.Println(result)
 
-
+	fmt.Println("starting router")
 
 
 	router := gin.Default()
