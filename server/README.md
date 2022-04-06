@@ -10,8 +10,8 @@ deploying to heroku from a subdirectory is done according to [this SO question](
 
 ## sql database
 
-database used is the heroku addon, `heroku-postgres`
+mongo db atlas free
 
 ## images repo
 
-also a heroku addon, `cloudinary`
+a heroku addon, `cloudinary`

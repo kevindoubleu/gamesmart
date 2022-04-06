@@ -5,7 +5,7 @@ Simple, gamified, casual e-learning
 
 - [ ] auth
   - [x] register
-  - [ ] login
+  - [x] login
   - [ ] logout
   - [ ] profile
 
