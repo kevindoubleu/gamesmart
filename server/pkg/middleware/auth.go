@@ -8,19 +8,23 @@ import (
 )
 
 // only allow authorized users
-func AuthUser(c *gin.Context) {
-	if helper.ValidJWTSession(c) {
-		c.Next()
-	} else {
-		c.AbortWithStatus(http.StatusUnauthorized)
+func AuthUser(svc helper.JWTService) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if svc.ValidSession(c) {
+			c.Next()
+		} else {
+			c.AbortWithStatus(http.StatusUnauthorized)
+		}
 	}
 }
 
 // only allow unauthorized users
-func UnauthUser(c *gin.Context) {
-	if !helper.ValidJWTSession(c) {
-		c.Next()
-	} else {
-		c.AbortWithStatus(http.StatusUnauthorized)
+func UnauthUser(svc helper.JWTService) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if !svc.ValidSession(c) {
+			c.Next()
+		} else {
+			c.AbortWithStatus(http.StatusUnauthorized)
+		}
 	}
 }

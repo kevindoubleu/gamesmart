@@ -3,7 +3,6 @@ package helper
 import (
 	"fmt"
 	"log"
-	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -16,9 +15,11 @@ const (
 	CurrUser = "current user in context"
 )
 
-func GenerateJWTSession(c *gin.Context) (string, error) {
-	recipient := c.MustGet(CurrUser).(model.User)
+type JWTService struct {
+	JWTKey	[]byte
+}
 
+func (svc JWTService) GenerateSession(recipient model.User) (string, error) {
 	// create jwt
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"username": recipient.Username,
@@ -26,18 +27,14 @@ func GenerateJWTSession(c *gin.Context) (string, error) {
 	})
 
 	// sign jwt
-	key, _ := c.Get(constants.SECRETS_JWT)
-	signedToken, err := token.SignedString(key)
+	signedToken, err := token.SignedString(svc.JWTKey)
 	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
-		log.Println(constants.E_JWT_VERIFY, err)
 		return "", err
 	}
-
 	return signedToken, nil
 }
 
-func ValidJWTSession(c *gin.Context) bool {
+func (svc JWTService) ValidSession(c *gin.Context) bool {
 	// take client provided jwt from http header
 	authHeader := c.GetHeader("Authorization")
 	if len(authHeader) == 0 { return false }

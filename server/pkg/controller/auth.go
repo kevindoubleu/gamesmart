@@ -1,8 +1,6 @@
 package controller
 
 import (
-	"context"
-	"fmt"
 	"log"
 	"net/http"
 
@@ -14,31 +12,29 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func Register(c *gin.Context) {
-	// get db conn fron context and make timeout db operation ctx
-	db := c.MustGet(constants.DB).(*mongo.Database)
-	dbOp, cancel := context.WithTimeout(context.Background(), constants.DBO_TIMEOUT)
-	defer cancel()
+type AuthService struct {
+	UsersTable	*mongo.Collection
+	JWTHelper	helper.JWTService
+}
 
+func (svc AuthService) Register(c *gin.Context) {
 	// parse req
 	var newUser model.User
 	if err := c.BindJSON(&newUser); err != nil {
-		fmt.Println(newUser)
-
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 
 	// check existing username
-	usersTbl := db.Collection(constants.DB_TBL_USERS)
-	row := usersTbl.FindOne(dbOp, bson.M{"username":newUser.Username})
+	filter := bson.M{"username":newUser.Username}
+	row := svc.UsersTable.FindOne(c.Request.Context(), filter)
 	if row.Err() == nil {
 		c.JSON(http.StatusConflict, constants.DUPLICATE_USERNAME)
 		return
 	}
 
 	// create new user
-	result, err := usersTbl.InsertOne(dbOp, newUser)
+	result, err := svc.UsersTable.InsertOne(c.Request.Context(), newUser)
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		log.Println(constants.E_DBO_INSERT, err)
@@ -48,12 +44,7 @@ func Register(c *gin.Context) {
 	c.JSON(http.StatusCreated, result)
 }
 
-func Login(c *gin.Context) {
-	// get db conn fron context and make timeout db operation ctx
-	db := c.MustGet(constants.DB).(*mongo.Database)
-	dbOp, cancel := context.WithTimeout(context.Background(), constants.DBO_TIMEOUT)
-	defer cancel()
-
+func (svc AuthService) Login(c *gin.Context) {
 	// parse req
 	var enteredUser model.User
 	if err := c.BindJSON(&enteredUser); err != nil {
@@ -62,8 +53,8 @@ func Login(c *gin.Context) {
 	}
 
 	// check username
-	usersTbl := db.Collection(constants.DB_TBL_USERS)
-	row := usersTbl.FindOne(dbOp, bson.M{"username":enteredUser.Username})
+	filter := bson.M{"username":enteredUser.Username}
+	row := svc.UsersTable.FindOne(c.Request.Context(), filter)
 	if row.Err() == mongo.ErrNoDocuments {
 		c.JSON(http.StatusUnauthorized, constants.INVALID_CREDENTIALS)
 		return
@@ -84,8 +75,7 @@ func Login(c *gin.Context) {
 	}
 
 	// get jwt generated with helper
-	c.Set(helper.CurrUser, enteredUser)
-	token, err := helper.GenerateJWTSession(c)
+	token, err := svc.JWTHelper.GenerateSession(enteredUser)
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		log.Println(constants.E_JWT_VERIFY)
