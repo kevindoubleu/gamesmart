@@ -7,38 +7,53 @@ import (
 	"github.com/kevindoubleu/gamesmart/pkg/controller"
 	"github.com/kevindoubleu/gamesmart/pkg/controller/helper"
 	"github.com/kevindoubleu/gamesmart/pkg/middleware"
+	"github.com/kevindoubleu/gamesmart/pkg/model"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
+type resources struct {
+	db		*mongo.Database
+	secrets	*model.Secrets
+}
+
+func defaultResources() resources {
+	return resources{
+		db: config.ConnectDb("gamesmart"),
+		secrets: config.GenerateSecrets(),
+	}
+}
+
 func InitRouter(router *gin.Engine) {
-	router.GET("/", controller.Home)
-	router.GET("/ping", controller.Pong)
-
 	// prepare resources needed by endpoints
-	// db
-	db := config.ConnectDb()
-	// secrets
-	secrets := config.GenerateSecrets()
+	res := defaultResources()
 
+	// fire up endpoints
+	router.GET("/", controller.Home)
+	authEndpoints(router, res)
+	questionEndpoints(router, res)
+}
 
-
+func authEndpoints(router *gin.Engine, res resources) {
 	jwtSvc := helper.JWTService{
-		JWTKey: secrets.JWTKey,
+		JWTKey: res.secrets.JWTKey,
 	}
 	authSvc := controller.AuthService{
-		UsersTable: db.Collection(constants.DB_TBL_USERS),
+		UsersTable: res.db.Collection(constants.DB_TBL_USERS),
 		JWTHelper: jwtSvc,
 	}
+
 	auth := router.Group("/auth")
 	{
 		auth.POST("/register", middleware.UnauthUser(jwtSvc), authSvc.Register)
 		auth.POST("/login", middleware.UnauthUser(jwtSvc), authSvc.Login)
 	}
+}
 
-
-
+func questionEndpoints(router *gin.Engine, res resources) {
 	questionSvc := controller.QuestionService{
-		QuestionsTable: db.Collection(constants.DB_TBL_QUESTIONS),
+		QuestionsTable: res.db.Collection(constants.DB_TBL_QUESTIONS),
 	}
+
 	question := router.Group("/question")
 	{
 		question.GET("/", questionSvc.GetQuestions)
@@ -47,10 +62,4 @@ func InitRouter(router *gin.Engine) {
 		question.PATCH("/:" + controller.QUESTION_ID, questionSvc.UpdateQuestion)
 		question.DELETE("/:" + controller.QUESTION_ID, questionSvc.DeleteQuestion)
 	}
-
-
-
-	router.GET("/albums", controller.GetAlbums)
-	router.GET("/albums/:id", controller.GetAlbumByID)
-	router.POST("/albums", controller.PostAlbums)
 }
