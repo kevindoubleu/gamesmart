@@ -42,6 +42,10 @@ func InitRouter(router *gin.Engine) {
 	question := router.Group("/question")
 	{
 		question.GET("/", questionSvc.GetQuestions)
+		question.GET("/:" + controller.QUESTION_ID, questionSvc.GetQuestionById)
+		question.POST("/", questionSvc.AddQuestion)
+		question.PATCH("/:" + controller.QUESTION_ID, questionSvc.UpdateQuestion)
+		question.DELETE("/:" + controller.QUESTION_ID, questionSvc.DeleteQuestion)
 	}
 
 

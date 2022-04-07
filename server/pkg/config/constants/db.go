@@ -17,4 +17,6 @@ const (
 
 	E_DBO_READ   = "reading from database"
 	E_DBO_INSERT = "inserting into database"
+	E_DBO_UPDATE = "updating database"
+	E_DBO_DELETE = "deleting from database"
 )

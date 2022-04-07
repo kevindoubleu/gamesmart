@@ -11,9 +11,11 @@ type User struct {
 	// server initialized
 	Money		int64		`bson:"money"`
 	JoinDate	time.Time	`bson:"join_date"`
+	Answered	[]Question	`bson:"answered"`
 }
 
 func (u *User) Init() {
 	u.Money = 0
 	u.JoinDate = time.Now()
+	u.Answered = make([]Question, 0)
 }
