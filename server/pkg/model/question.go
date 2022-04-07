@@ -6,6 +6,7 @@ import (
 )
 
 type Question struct {
+	Id			string	`bson:"_id"`
 	Question	string	`bson:"question"`
 	Answer		string	`bson:"answer"`
 	Difficulty	int32	`bson:"difficulty"`
