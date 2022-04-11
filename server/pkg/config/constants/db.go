@@ -1,6 +1,9 @@
 package constants
 
-import "time"
+import (
+	"errors"
+	"time"
+)
 
 const (
 	DB = "gamesmart"
@@ -10,13 +13,17 @@ const (
 	// table names
 	DB_TBL_USERS = "users"
 	DB_TBL_QUESTIONS = "questions"
+)
 
-	// errors
-	ErrDbInit    = "initializing database"
-	ErrDbConnect = "connecting to database"
+// errors
+var (
+	ErrDbInit    = errors.New("initializing database")
+	ErrDbConnect = errors.New("connecting to database")
 
-	ErrDbRead   = "reading from database"
-	ErrDbInsert = "inserting into database"
-	ErrDbUpdate = "updating database"
-	ErrDbDelete = "deleting from database"
+	ErrDbRead   = errors.New("reading from database")
+	ErrDbInsert = errors.New("inserting into database")
+	ErrDbUpdate = errors.New("updating database")
+	ErrDbDelete = errors.New("deleting from database")
+
+	ErrDbAggregate = errors.New("aggregating from database")
 )
