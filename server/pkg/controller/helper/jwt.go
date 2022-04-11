@@ -3,7 +3,6 @@ package helper
 import (
 	"errors"
 	"log"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
@@ -22,7 +21,7 @@ var (
 
 type JWTService interface {
 	// get the provided JWT key from the secrets provided
-	GetJWTKey() []byte
+	getJWTKey() []byte
 
 	// generate a new session for the user
 	// returns the JWT in signed string format
@@ -43,16 +42,13 @@ type myJWTService struct {
 	key	[]byte
 }
 
-func (svc myJWTService) GetJWTKey() []byte {
+func (svc myJWTService) getJWTKey() []byte {
 	return svc.key
 }
 
 func (svc myJWTService) GenerateSession(recipient model.User) (string, error) {
 	// create jwt
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"username": recipient.Username,
-		"exp": time.Now().Add(24 * time.Hour).Unix(),
-	})
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, model.NewSessionJWT(recipient))
 
 	// sign jwt
 	signedToken, err := token.SignedString(svc.key)
@@ -69,7 +65,7 @@ func (svc myJWTService) GetValidToken(c *gin.Context) (*jwt.Token, error) {
 	tokenString := authHeader[len("Bearer "):]
 
 	// verify jwt
-	parsedToken, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
+	parsedToken, err := jwt.ParseWithClaims(tokenString, &model.SessionJWT{}, func(t *jwt.Token) (interface{}, error) {
 		return svc.key, nil
 	})
 
