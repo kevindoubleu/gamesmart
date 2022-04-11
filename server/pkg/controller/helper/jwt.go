@@ -74,7 +74,7 @@ func (svc myJWTService) GetValidToken(c *gin.Context) (*jwt.Token, error) {
 	})
 
 	if err != nil {
-		log.Println(constants.E_JWT_VERIFY, err)
+		log.Println(constants.ErrJWTVerify, err)
 		return nil, err
 	}
 

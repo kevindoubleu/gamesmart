@@ -37,7 +37,7 @@ func (svc AuthService) Register(c *gin.Context) {
 	result, err := svc.UsersTable.InsertOne(c.Request.Context(), newUser)
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
-		log.Println(constants.E_DBO_INSERT, err)
+		log.Println(constants.ErrDbInsert, err)
 		return
 	}
 	
@@ -65,7 +65,7 @@ func (svc AuthService) Login(c *gin.Context) {
 	err := row.Decode(&userInDb)
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
-		log.Println(constants.E_DBO_READ)
+		log.Println(constants.ErrDbRead)
 		return
 	}
 
@@ -78,7 +78,7 @@ func (svc AuthService) Login(c *gin.Context) {
 	token, err := svc.JWTService.GenerateSession(enteredUser)
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
-		log.Println(constants.E_JWT_VERIFY)
+		log.Println(constants.ErrJWTVerify)
 		return
 	}
 

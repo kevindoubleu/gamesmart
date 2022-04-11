@@ -20,14 +20,14 @@ func ConnectDb(name string) *mongo.Database {
 		}),
 	)
 	if err != nil {
-		log.Fatal(constants.E_DBI_INIT, err)
+		log.Fatal(constants.ErrDbInit, err)
 	}
 
 	dbInit, cancel := context.WithTimeout(context.Background(), constants.DBO_TIMEOUT)
 	defer cancel()
 	err = client.Connect(dbInit)
 	if err != nil {
-		log.Fatal(constants.E_DBI_CONNECT, err)
+		log.Fatal(constants.ErrDbConnect, err)
 	}
 
 	return client.Database(name)

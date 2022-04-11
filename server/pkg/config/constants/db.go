@@ -12,11 +12,11 @@ const (
 	DB_TBL_QUESTIONS = "questions"
 
 	// errors
-	E_DBI_INIT    = "initializing database"
-	E_DBI_CONNECT = "connecting to database"
+	ErrDbInit    = "initializing database"
+	ErrDbConnect = "connecting to database"
 
-	E_DBO_READ   = "reading from database"
-	E_DBO_INSERT = "inserting into database"
-	E_DBO_UPDATE = "updating database"
-	E_DBO_DELETE = "deleting from database"
+	ErrDbRead   = "reading from database"
+	ErrDbInsert = "inserting into database"
+	ErrDbUpdate = "updating database"
+	ErrDbDelete = "deleting from database"
 )

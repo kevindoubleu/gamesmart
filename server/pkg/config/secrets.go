@@ -15,7 +15,7 @@ func GenerateSecrets() *model.Secrets {
 	secrets.JWTKey = make([]byte, 32) // 256 bit / 8 = 32 byte
 	_, err := rand.Read(secrets.JWTKey)
 	if err != nil {
-		log.Panic(constants.E_SECRETS_INIT)
+		log.Panic(constants.ErrSecretsInit)
 	}
 
 	return &secrets
