@@ -12,49 +12,61 @@ import (
 )
 
 type resources struct {
-	db		*mongo.Database
 	secrets	*model.Secrets
+
+	dbConn	*mongo.Database
+	jwtSvc	helper.JWTService
 }
 
 func defaultResources() resources {
+	secrets := config.GenerateSecrets()
+
 	return resources{
-		db: config.ConnectDb("gamesmart"),
-		secrets: config.GenerateSecrets(),
+		secrets: secrets,
+		dbConn: defaultDb(),
+		jwtSvc: defaultJWTService(secrets),
 	}
+}
+
+func defaultDb() *mongo.Database {
+	return config.ConnectDb(constants.DB)
+}
+
+func defaultJWTService(secrets *model.Secrets) helper.JWTService {
+	return helper.NewJWTService(secrets)
 }
 
 func InitRouter(router *gin.Engine) {
 	// prepare resources needed by endpoints
-	res := defaultResources()
+	rsc := defaultResources()
 
 	// fire up endpoints
 	router.GET("/", controller.Home)
-	authEndpoints(router, res)
-	questionEndpoints(router, res)
+	authEndpoints(router, rsc)
+	questionEndpoints(router, rsc)
 }
 
-func authEndpoints(router *gin.Engine, res resources) {
-	jwtSvc := helper.JWTService{
-		JWTKey: res.secrets.JWTKey,
-	}
+func authEndpoints(router *gin.Engine, rsc resources) {
 	authSvc := controller.AuthService{
-		UsersTable: res.db.Collection(constants.DB_TBL_USERS),
-		JWTHelper: jwtSvc,
+		UsersTable: rsc.dbConn.Collection(constants.DB_TBL_USERS),
+		JWTService: rsc.jwtSvc,
 	}
 
-	auth := router.Group("/auth")
+	auth := router.Group("/auth", middleware.UnauthUser(authSvc.JWTService))
 	{
-		auth.POST("/register", middleware.UnauthUser(jwtSvc), authSvc.Register)
-		auth.POST("/login", middleware.UnauthUser(jwtSvc), authSvc.Login)
+		auth.POST("/register", authSvc.Register)
+		auth.POST("/login", authSvc.Login)
 	}
 }
 
-func questionEndpoints(router *gin.Engine, res resources) {
+func questionEndpoints(router *gin.Engine, rsc resources) {
 	questionSvc := controller.QuestionService{
-		QuestionsTable: res.db.Collection(constants.DB_TBL_QUESTIONS),
+		QuestionsTable: rsc.dbConn.Collection(constants.DB_TBL_QUESTIONS),
+		JWTService: rsc.jwtSvc,
 	}
 
-	question := router.Group("/question")
+	// TODO: add auth middleware here after testing
+	question := router.Group("/question", middleware.AuthUser(questionSvc.JWTService))
 	{
 		question.GET("/", questionSvc.GetQuestions)
 		question.GET("/:" + controller.QUESTION_ID, questionSvc.GetQuestionById)

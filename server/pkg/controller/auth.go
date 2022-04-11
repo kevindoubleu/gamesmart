@@ -14,7 +14,7 @@ import (
 
 type AuthService struct {
 	UsersTable	*mongo.Collection
-	JWTHelper	helper.JWTService
+	JWTService	helper.JWTService
 }
 
 func (svc AuthService) Register(c *gin.Context) {
@@ -75,7 +75,7 @@ func (svc AuthService) Login(c *gin.Context) {
 	}
 
 	// get jwt generated with helper
-	token, err := svc.JWTHelper.GenerateSession(enteredUser)
+	token, err := svc.JWTService.GenerateSession(enteredUser)
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		log.Println(constants.E_JWT_VERIFY)

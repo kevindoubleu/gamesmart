@@ -8,9 +8,10 @@ import (
 )
 
 // only allow authorized users
-func AuthUser(svc helper.JWTService) gin.HandlerFunc {
+func AuthUser(jwtSvc helper.JWTService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if svc.ValidSession(c) {
+		token, err := jwtSvc.GetValidToken(c)
+		if err == nil && token != nil && token.Valid {
 			c.Next()
 		} else {
 			c.AbortWithStatus(http.StatusUnauthorized)
@@ -19,9 +20,10 @@ func AuthUser(svc helper.JWTService) gin.HandlerFunc {
 }
 
 // only allow unauthorized users
-func UnauthUser(svc helper.JWTService) gin.HandlerFunc {
+func UnauthUser(jwtSvc helper.JWTService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if !svc.ValidSession(c) {
+		token, err := jwtSvc.GetValidToken(c)
+		if err != nil && token == nil {
 			c.Next()
 		} else {
 			c.AbortWithStatus(http.StatusUnauthorized)

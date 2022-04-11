@@ -1,7 +1,7 @@
 package helper
 
 import (
-	"fmt"
+	"errors"
 	"log"
 	"time"
 
@@ -15,11 +15,39 @@ const (
 	CurrUser = "current user in context"
 )
 
-type JWTService struct {
-	JWTKey	[]byte
+var (
+	ErrInvalidJWT = errors.New("JWT is not valid")
+	ErrMissingJWTHeader = errors.New("JWT session not found in HTTP header")
+)
+
+type JWTService interface {
+	// get the provided JWT key from the secrets provided
+	GetJWTKey() []byte
+
+	// generate a new session for the user
+	// returns the JWT in signed string format
+	GenerateSession(model.User) (string, error)
+
+	// tries to get the token in context
+	// if token is invalid then a nil token will be returned
+	GetValidToken(*gin.Context) (*jwt.Token, error)
 }
 
-func (svc JWTService) GenerateSession(recipient model.User) (string, error) {
+func NewJWTService(secrets *model.Secrets) JWTService {
+	return myJWTService{
+		key: secrets.JWTKey,
+	}
+}
+
+type myJWTService struct {
+	key	[]byte
+}
+
+func (svc myJWTService) GetJWTKey() []byte {
+	return svc.key
+}
+
+func (svc myJWTService) GenerateSession(recipient model.User) (string, error) {
 	// create jwt
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"username": recipient.Username,
@@ -27,30 +55,33 @@ func (svc JWTService) GenerateSession(recipient model.User) (string, error) {
 	})
 
 	// sign jwt
-	signedToken, err := token.SignedString(svc.JWTKey)
+	signedToken, err := token.SignedString(svc.key)
 	if err != nil {
 		return "", err
 	}
 	return signedToken, nil
 }
 
-func (svc JWTService) ValidSession(c *gin.Context) bool {
+func (svc myJWTService) GetValidToken(c *gin.Context) (*jwt.Token, error) {
 	// take client provided jwt from http header
 	authHeader := c.GetHeader("Authorization")
-	if len(authHeader) == 0 { return false }
+	if len(authHeader) == 0 { return nil, ErrMissingJWTHeader }
 	tokenString := authHeader[len("Bearer "):]
 
 	// verify jwt
 	parsedToken, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
-		key, _ := c.Get(constants.SECRETS_JWT)
-		fmt.Println("key is", key)
-		return key, nil
+		return svc.key, nil
 	})
 
 	if err != nil {
 		log.Println(constants.E_JWT_VERIFY, err)
-		return false
+		return nil, err
 	}
 
-	return parsedToken.Valid
+	if !parsedToken.Valid {
+		log.Println(ErrInvalidJWT)
+		return nil, err
+	}
+
+	return parsedToken, nil
 }
