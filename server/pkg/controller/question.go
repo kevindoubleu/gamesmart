@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/kevindoubleu/gamesmart/pkg/config/constants"
+	"github.com/kevindoubleu/gamesmart/pkg/controller/helper"
 	"github.com/kevindoubleu/gamesmart/pkg/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -18,27 +19,11 @@ const (
 
 type QuestionService struct {
 	QuestionsTable	*mongo.Collection
+	JWTService		helper.JWTService
+	UserService		helper.UserService
 }
 
-func (svc QuestionService) GetQuestions(c *gin.Context) {
-	result := []model.Question{}
-
-	cursor, err := svc.QuestionsTable.Find(c.Request.Context(), bson.M{})
-	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
-		log.Println(constants.E_DBO_READ, err)
-		return
-	}
-
-	err = cursor.All(c.Request.Context(), &result)
-	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
-		log.Println(constants.E_DBO_READ, err)
-		return
-	}
-
-	c.JSON(http.StatusOK, result)
-}
+// basic single CRUD
 
 func (svc QuestionService) GetQuestionById(c *gin.Context) {
 	// get id param from url
@@ -73,7 +58,7 @@ func (svc QuestionService) AddQuestion(c *gin.Context) {
 	result, err := svc.QuestionsTable.InsertOne(c.Request.Context(), newQuestion)
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
-		log.Println(constants.E_DBO_INSERT, err)
+		log.Println(constants.ErrDbInsert, err)
 		return
 	}
 
@@ -102,7 +87,7 @@ func (svc QuestionService) UpdateQuestion(c *gin.Context) {
 	})
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
-		log.Println(constants.E_DBO_UPDATE, err)
+		log.Println(constants.ErrDbUpdate, err)
 		return
 	}
 
@@ -128,7 +113,7 @@ func (svc QuestionService) DeleteQuestion(c *gin.Context) {
 	deleted, err := svc.QuestionsTable.DeleteOne(c.Request.Context(), bson.M{"_id":objId})
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
-		log.Println(constants.E_DBO_DELETE, err)
+		log.Println(constants.ErrDbDelete, err)
 		return
 	}
 
@@ -138,4 +123,60 @@ func (svc QuestionService) DeleteQuestion(c *gin.Context) {
 	}
 
 	c.Status(http.StatusOK)
+}
+
+// READS
+
+func (svc QuestionService) GetAllQuestions(c *gin.Context) {
+	result := []model.Question{}
+
+	cursor, err := svc.QuestionsTable.Find(c.Request.Context(), bson.M{})
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		log.Println(constants.ErrDbRead, err)
+		return
+	}
+
+	err = cursor.All(c.Request.Context(), &result)
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		log.Println(constants.ErrDbRead, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
+func (svc QuestionService) GetRandomQuestionByGrade(c *gin.Context) {
+	// get username
+	token, _ := svc.JWTService.GetValidToken(c)
+	username, err := svc.UserService.GetUsernameFromSession(token)
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	// get user
+	user := svc.UserService.GetUserByUsername(c.Request.Context(), username)
+	grade := user.Grade
+	log.Println(grade)
+
+	// find random question in grade
+	cursor, err := svc.QuestionsTable.Aggregate(c.Request.Context(), []bson.M{
+		{"$match": bson.M{"grade": grade}},
+		{"$sample": bson.M{"size": 1}},
+	})
+
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		log.Println(constants.ErrDbAggregate)
+		return
+	}
+
+	var question model.Question
+	cursor.Next(c.Request.Context())
+	cursor.Decode(&question)
+
+	// json the picked question
+	c.JSON(http.StatusOK, question)
 }
