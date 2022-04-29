@@ -3,6 +3,7 @@ package helper
 import (
 	"context"
 
+	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
 	"github.com/kevindoubleu/gamesmart/pkg/config/constants"
 	"github.com/kevindoubleu/gamesmart/pkg/model"
@@ -16,6 +17,8 @@ type UserService interface {
 
 	// returns nil if username doesn't exist
 	GetUserByUsername(context.Context, string) *model.User
+
+	GetGrade(*gin.Context, JWTService) int32
 }
 
 func NewUserService(usersTable *mongo.Collection) UserService {
@@ -52,4 +55,13 @@ func (svc myUserService) GetUserByUsername(c context.Context, username string) *
 	var user model.User
 	row.Decode(&user)
 	return &user
+}
+
+func (svc myUserService) GetGrade(c *gin.Context, jwtSvc JWTService) int32 {
+	token, _ := jwtSvc.GetValidToken(c)
+
+	username, _ := svc.GetUsernameFromSession(token)
+	user := svc.GetUserByUsername(c.Request.Context(), username)
+
+	return user.Grade
 }

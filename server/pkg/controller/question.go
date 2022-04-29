@@ -148,18 +148,7 @@ func (svc QuestionService) GetAllQuestions(c *gin.Context) {
 }
 
 func (svc QuestionService) GetRandomQuestionByGrade(c *gin.Context) {
-	// get username
-	token, _ := svc.JWTService.GetValidToken(c)
-	username, err := svc.UserService.GetUsernameFromSession(token)
-	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
-	// get user
-	user := svc.UserService.GetUserByUsername(c.Request.Context(), username)
-	grade := user.Grade
-	log.Println(grade)
+	grade := svc.UserService.GetGrade(c, svc.JWTService)
 
 	// find random question in grade
 	cursor, err := svc.QuestionsTable.Aggregate(c.Request.Context(), []bson.M{
@@ -173,10 +162,47 @@ func (svc QuestionService) GetRandomQuestionByGrade(c *gin.Context) {
 		return
 	}
 
+	// parse into struct
 	var question model.Question
 	cursor.Next(c.Request.Context())
 	cursor.Decode(&question)
 
-	// json the picked question
 	c.JSON(http.StatusOK, question)
+}
+
+func (svc QuestionService) GetNewRandomQuestionByGrade(c *gin.Context) {
+	// mock object ids from user object
+	// oids := []primitive.ObjectID{}
+	// oid, _ := primitive.ObjectIDFromHex("62542a0b576d078dea312f89")
+	// oids = append(oids, oid)
+	// oid, _ = primitive.ObjectIDFromHex("624964e955a3c9602f3fe155")
+	// oids = append(oids, oid)
+
+	// pipeline := []bson.M{
+	// 	bson.M{
+	// 		"$match": bson.M{
+	// 			"_id": bson.M{"$not": bson.M{"$in": oids}},
+	// 			"grade": 4,
+	// 		},
+	// 	},
+	// 	bsonm{
+	// 		"$sample": bson.M{
+	// 			"size": 1,
+	// 		},
+	// 	},
+	// }
+	// db.questions.aggregate([
+	// 	{
+	// 		$match: {
+	// 			"_id":{$not:{$in:[ObjectId("62542a0b576d078dea312f89"),ObjectId("624964e955a3c9602f3fe155")]}},
+	// 			"grade":4,
+	// 		}
+	// 	},
+	// 	{
+	// 		$sample: {
+	// 			size:1
+	// 		}
+	// 	},
+	// ])
+	// cursor, err := svc.QuestionsTable.Aggregate(c.Request.Context(), pipeline)
 }

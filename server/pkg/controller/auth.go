@@ -25,6 +25,18 @@ func (svc AuthService) Register(c *gin.Context) {
 		return
 	}
 
+	// validate client provided values
+	valid := true
+	if len(newUser.Username) == 0 ||
+	   len(newUser.Password) < 8  || // TODO: dont store plaintext pw
+	   newUser.Grade < 1 || newUser.Grade > 12 {
+		valid = false
+	}
+	if !valid {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
 	// check existing username
 	filter := bson.M{"username":newUser.Username}
 	row := svc.UsersTable.FindOne(c.Request.Context(), filter)
